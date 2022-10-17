@@ -1,8 +1,9 @@
 package automata
 
 import (
-	"formal/first_practic/parser"
 	"strings"
+
+	"github.com/kuzin57/FormalPractic/first_practic/parser"
 )
 
 type Automata interface {

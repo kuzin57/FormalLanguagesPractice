@@ -1,9 +1,10 @@
 package automata_test
 
 import (
-	"formal/first_practic/automata"
-	"formal/first_practic/parser"
 	"testing"
+
+	"github.com/kuzin57/FormalPractic/first_practic/automata"
+	"github.com/kuzin57/FormalPractic/first_practic/parser"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"formal/first_practic/automata"
-	"formal/first_practic/parser"
 	"os"
+
+	"github.com/kuzin57/FormalPractic/first_practic/parser"
+
+	"github.com/kuzin57/FormalPractic/first_practic/automata"
 )
 
 func main() {

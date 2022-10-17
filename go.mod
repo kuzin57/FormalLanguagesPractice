@@ -1,4 +1,4 @@
-module formal
+module github.com/kuzin57/FormalPractic
 
 go 1.19
 

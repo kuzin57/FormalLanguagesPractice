@@ -35,8 +35,8 @@ func TestNewAutomata(t *testing.T) {
 }
 
 func TestConcat(t *testing.T) {
-	testCases := []string{"ac", "abc", "abcd", "aaa"}
-	expected := []int{0, 3, 3, 0}
+	testCases := []string{"a", "ab", "b", "ac", "abc", "abcd", "aaa"}
+	expected := []int{0, 0, 0, 0, 3, 3, 0}
 
 	newAutomata := SetupAutomata(regularExpressions[3])
 	assert.NotNil(t, newAutomata)
@@ -48,8 +48,8 @@ func TestConcat(t *testing.T) {
 }
 
 func TestJoin(t *testing.T) {
-	testCases := []string{"ababababab", "abbaaababa", "babaaabaabbb", "acc"}
-	expected := []int{10, 9, 10, 0}
+	testCases := []string{"c", "ab", "aab", "aba", "ababababab", "abbaaababa", "babaaabaabbb", "acc"}
+	expected := []int{0, 2, 3, 2, 10, 9, 10, 0}
 
 	newAutomata := SetupAutomata(regularExpressions[6])
 	assert.NotNil(t, newAutomata)
@@ -62,8 +62,8 @@ func TestJoin(t *testing.T) {
 }
 
 func TestCycle(t *testing.T) {
-	testCases := []string{"abababab", "aaababab", "ababababababaaaaa", "aaaaaaaaac", "bbbbbbbbbbc"}
-	expected := []int{8, 8, 17, 9, 10}
+	testCases := []string{"a", "b", "c", "abb", "ab", "abababab", "aaababab", "ababababababaaaaa", "aaaaaaaaac", "bbbbbbbbbbc"}
+	expected := []int{1, 1, 0, 3, 2, 8, 8, 17, 9, 10}
 
 	newAutomata := SetupAutomata(regularExpressions[7])
 	assert.NotNil(t, newAutomata)

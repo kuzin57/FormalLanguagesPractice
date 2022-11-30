@@ -19,7 +19,6 @@ func main() {
 	}
 
 	scanner := bufio.NewScanner(file)
-
 	var rules []string
 	for scanner.Scan() {
 		rules = append(rules, scanner.Text())

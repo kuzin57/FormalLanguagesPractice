@@ -88,7 +88,7 @@ func (ga *grammarAdapter) initComplete() {
 
 func (ga *grammarAdapter) Read(word string) bool {
 	ga.word = word
-	ga.grammar.AddNewStartSymbol()
+	ga.addNewStartSymbol()
 
 	ga.currentConfigurations[0] = make(map[configuration]struct{})
 	ga.currentConfigurations[0][newConfiguration("S", 0, 0, startSymbol)] = struct{}{}
@@ -133,4 +133,8 @@ func (ga *grammarAdapter) updateCongigurations(j int, updateConfig func(configur
 		}
 	}
 	return retValue
+}
+
+func (ga *grammarAdapter) addNewStartSymbol() {
+	ga.grammar.Rules[startSymbol] = []string{"S"}
 }

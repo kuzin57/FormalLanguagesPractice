@@ -6,10 +6,6 @@ func NewGrammar() *Grammar {
 	}
 }
 
-func (g *Grammar) AddNewStartSymbol() {
-	g.Rules[startSymbol] = []string{"S"}
-}
-
 func (g *Grammar) AddRule(nt byte, rightPart string) {
 	_, ok := g.Rules[nt]
 	if !ok {

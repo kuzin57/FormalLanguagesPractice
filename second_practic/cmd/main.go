@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kuzin57/FormalPractic/second_practic/builder"
+	"github.com/kuzin57/FormalPractic/second_practic/adapter"
 )
 
 const (
@@ -24,16 +24,17 @@ func main() {
 		rules = append(rules, scanner.Text())
 	}
 
-	gramBuilder := builder.NewGrammarBuilder(rules)
-	grammar := gramBuilder.Build()
+	grammarAdapter := adapter.NewGrammarAdapter()
+	grammarAdapter.BuildGrammar(rules)
 
 	scanner = bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		word := scanner.Text()
-		if grammar.CheckWord(word) {
+		if grammarAdapter.Read(word) {
 			fmt.Println("YES")
 			continue
 		}
 		fmt.Println("NO")
+		grammarAdapter.Flush()
 	}
 }

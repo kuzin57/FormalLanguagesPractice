@@ -17,7 +17,7 @@ func splitByArrow(line string) (string, string) {
 	return splitted[0], splitted[1]
 }
 
-func (gb *grammarBuilder) Build() grammar.Grammar {
+func (gb *grammarBuilder) Build() *grammar.Grammar {
 	newGrammar := grammar.NewGrammar()
 	for _, line := range gb.input {
 		leftPart, rightPart := splitByArrow(line)

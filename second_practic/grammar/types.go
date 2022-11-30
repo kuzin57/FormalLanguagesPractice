@@ -5,8 +5,7 @@ const (
 )
 
 type grammar struct {
-	rules                 map[byte][]string
-	currentConfigurations map[configuration]struct{}
+	rules map[byte][]string
 }
 
 type configuration struct {
@@ -14,4 +13,11 @@ type configuration struct {
 	position   int
 	startIndex int
 	terminal   byte
+}
+
+type reader struct {
+	grammar                 *grammar
+	currentConfigurations   []map[configuration]struct{}
+	predict, complete, scan func(configuration, int, string) bool
+	word                    string
 }

@@ -2,8 +2,7 @@ package grammar
 
 func NewGrammar() Grammar {
 	return &grammar{
-		rules:                 make(map[byte][]string),
-		currentConfigurations: make(map[configuration]struct{}),
+		rules: make(map[byte][]string),
 	}
 }
 
@@ -16,36 +15,117 @@ func newConfiguration(expression string, position int, startIndex int, terminal 
 	}
 }
 
+func newReader(grammar *grammar, word string) *reader {
+	return &reader{
+		grammar:               grammar,
+		currentConfigurations: make([]map[configuration]struct{}, 1),
+		word:                  word,
+	}
+}
+
 func (g *grammar) addNewStartSymbol() {
 	g.rules[startSymbol] = []string{"S"}
 }
 
 func (g *grammar) CheckWord(word string) bool {
-	g.addNewStartSymbol()
+	reader := newReader(g, word)
+	reader.initScan()
+	reader.initPredict()
+	reader.initComplete()
+	return reader.read(word)
+}
+
+func (r *reader) initScan() {
+	r.scan = func(config configuration, indexToAdd int, word string) bool {
+		var retValue bool
+		if config.position < len(config.expression) {
+			_, ok := r.grammar.rules[config.expression[config.position]]
+			if !ok && word[indexToAdd] == config.expression[config.position] {
+				config.position++
+				_, retValue = r.currentConfigurations[indexToAdd+1][config]
+				retValue = !retValue
+				r.currentConfigurations[indexToAdd+1][config] = struct{}{}
+			}
+		}
+		return retValue
+	}
+}
+
+func (r *reader) initPredict() {
+	r.predict = func(config configuration, indexToAdd int, word string) bool {
+		var retValue bool
+		if config.position < len(config.expression) {
+			rules, ok := r.grammar.rules[config.expression[config.position]]
+			if ok {
+				for _, rule := range rules {
+					newConfig := newConfiguration(rule, 0, indexToAdd, config.expression[config.position])
+					_, retValue = r.currentConfigurations[indexToAdd][newConfig]
+					retValue = !retValue
+					r.currentConfigurations[indexToAdd][newConfig] = struct{}{}
+				}
+			}
+		}
+		return retValue
+	}
+}
+
+func (r *reader) initComplete() {
+	r.complete = func(config configuration, indexToAdd int, word string) bool {
+		var retValue bool
+		if config.position == len(config.expression) {
+			terminal := config.terminal
+			_, ok := r.grammar.rules[terminal]
+			if ok {
+				for conf := range r.currentConfigurations[config.startIndex] {
+					if conf.position < len(conf.expression) &&
+						terminal == conf.expression[conf.position] {
+						conf.position++
+						_, retValue = r.currentConfigurations[indexToAdd][conf]
+						retValue = !retValue
+						r.currentConfigurations[indexToAdd][conf] = struct{}{}
+					}
+				}
+			}
+		}
+		return retValue
+	}
+}
+
+func (r *reader) read(word string) bool {
+	r.grammar.addNewStartSymbol()
+
+	r.currentConfigurations[0] = make(map[configuration]struct{})
+	r.currentConfigurations[0][newConfiguration("S", 0, 0, startSymbol)] = struct{}{}
 
 	for {
-		changedPredict := g.predict(0)
-		changedComplete := g.predict(0)
+		changedPredict := r.updateCongigurations(0, r.predict)
+		changedComplete := r.updateCongigurations(0, r.complete)
 		if !changedPredict && !changedComplete {
 			break
 		}
 	}
 
 	for i := range word {
-		changedScan := g.scan(i, word)
+		r.currentConfigurations = append(
+			r.currentConfigurations,
+			make(map[configuration]struct{}),
+		)
+
+		changedScan := r.updateCongigurations(i, r.scan)
 		if !changedScan {
 			return false
 		}
 
 		for {
-			changedPredict := g.predict(i + 1)
-			changedComplete := g.complete(i + 1)
+			changedPredict := r.updateCongigurations(i+1, r.predict)
+			changedComplete := r.updateCongigurations(i+1, r.complete)
 			if !changedComplete && !changedPredict {
 				break
 			}
 		}
 	}
-	return true
+	_, inGrammar := r.currentConfigurations[len(word)][newConfiguration("S", 1, 0, startSymbol)]
+	return inGrammar
 }
 
 func (g *grammar) AddRule(nt byte, rightPart string) {
@@ -57,53 +137,13 @@ func (g *grammar) AddRule(nt byte, rightPart string) {
 	}
 }
 
-func (g *grammar) scan(index int, word string) bool {
-	newConfigurations := make(map[configuration]struct{})
-	var addedNew bool
-	for config := range g.currentConfigurations {
-		if config.position < len(config.expression) {
-			_, ok := g.rules[config.expression[config.position]]
-			if !ok && word[index] == config.expression[config.position] {
-				addedNew = true
-				config.position++
-				newConfigurations[config] = struct{}{}
-			}
+func (r *reader) updateCongigurations(j int, updateConfig func(configuration, int, string) bool) bool {
+	var addedNew, retValue bool
+	for config := range r.currentConfigurations[j] {
+		addedNew = updateConfig(config, j, r.word)
+		if addedNew {
+			retValue = true
 		}
 	}
-	g.currentConfigurations = newConfigurations
-	return addedNew
-}
-
-func (g *grammar) predict(j int) bool {
-	var addedNew bool
-	for config := range g.currentConfigurations {
-		if config.position < len(config.expression) {
-			rules, ok := g.rules[config.expression[config.position]]
-			if ok {
-				addedNew = true
-				for _, rule := range rules {
-					newConfig := newConfiguration(rule, 0, j, config.expression[config.position])
-					g.currentConfigurations[newConfig] = struct{}{}
-				}
-			}
-		}
-	}
-	return addedNew
-}
-
-func (g *grammar) complete(j int) bool {
-	var addedNew bool
-	for config := range g.currentConfigurations {
-		if config.position == len(config.expression) {
-			terminal := config.expression[config.position]
-			_, ok := g.rules[terminal]
-			if ok {
-				addedNew = true
-				for _, rule := range g.rules[terminal] {
-					g.currentConfigurations[newConfiguration(rule, 0, j, terminal)] = struct{}{}
-				}
-			}
-		}
-	}
-	return addedNew
+	return retValue
 }

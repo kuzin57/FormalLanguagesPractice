@@ -8,7 +8,7 @@ import (
 
 func NewGrammarBuilder(input []string) GrammarBuilder {
 	newBuilder := &grammarBuilder{}
-	copy(newBuilder.input, input)
+	newBuilder.input = input
 	return newBuilder
 }
 

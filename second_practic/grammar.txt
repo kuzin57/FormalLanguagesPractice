@@ -1,1 +1,2 @@
-S->aSbS|
+S->aSbA|
+A->c|

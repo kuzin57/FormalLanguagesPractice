@@ -8,12 +8,8 @@ import (
 	"github.com/kuzin57/FormalPractic/second_practic/adapter"
 )
 
-const (
-	inputFile = "../grammar.txt"
-)
-
 func main() {
-	file, err := os.Open(inputFile)
+	file, err := os.Open("../grammar.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -32,6 +28,7 @@ func main() {
 		word := scanner.Text()
 		if grammarAdapter.Read(word) {
 			fmt.Println("YES")
+			grammarAdapter.Flush()
 			continue
 		}
 		fmt.Println("NO")

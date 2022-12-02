@@ -60,6 +60,9 @@ func (ga *grammarAdapter) initScan() {
 			if !ok && word[indexToAdd] == config.expression[config.position] {
 				config.position++
 				_, retValue = ga.currentConfigurations[indexToAdd+1][config]
+				if !retValue {
+					ga.completeConfigurations = append(ga.completeConfigurations, config)
+				}
 				retValue = !retValue
 				ga.currentConfigurations[indexToAdd+1][config] = struct{}{}
 			}
@@ -77,6 +80,9 @@ func (ga *grammarAdapter) initPredict() {
 				for _, rule := range rules {
 					newConfig := newConfiguration(rule, 0, indexToAdd, config.expression[config.position])
 					_, retValue = ga.currentConfigurations[indexToAdd][newConfig]
+					if !retValue {
+						ga.completeConfigurations = append(ga.completeConfigurations, newConfig)
+					}
 					retValue = !retValue
 					ga.currentConfigurations[indexToAdd][newConfig] = struct{}{}
 				}
@@ -98,6 +104,9 @@ func (ga *grammarAdapter) initComplete() {
 						terminal == conf.expression[conf.position] {
 						conf.position++
 						_, retValue = ga.currentConfigurations[indexToAdd][conf]
+						if !retValue {
+							ga.completeConfigurations = append(ga.completeConfigurations, conf)
+						}
 						retValue = !retValue
 						ga.currentConfigurations[indexToAdd][conf] = struct{}{}
 					}
@@ -114,10 +123,12 @@ func (ga *grammarAdapter) Read(word string) bool {
 
 	ga.currentConfigurations[0] = make(map[configuration]struct{})
 	ga.currentConfigurations[0][newConfiguration("S", 0, 0, startSymbol)] = struct{}{}
+	ga.completeConfigurations = make([]configuration, 1)
+	ga.completeConfigurations[0] = newConfiguration("S", 0, 0, startSymbol)
 
 	for {
 		changedPredict := ga.updateCongigurations(0, ga.predict)
-		changedComplete := ga.updateCongigurations(0, ga.complete)
+		changedComplete := ga.completeConfiguration(0)
 		if !changedPredict && !changedComplete {
 			break
 		}
@@ -129,6 +140,7 @@ func (ga *grammarAdapter) Read(word string) bool {
 			make(map[configuration]struct{}),
 		)
 
+		ga.completeConfigurations = nil
 		changedScan := ga.updateCongigurations(i, ga.scan)
 		if !changedScan {
 			return false
@@ -136,7 +148,7 @@ func (ga *grammarAdapter) Read(word string) bool {
 
 		for {
 			changedPredict := ga.updateCongigurations(i+1, ga.predict)
-			changedComplete := ga.updateCongigurations(i+1, ga.complete)
+			changedComplete := ga.completeConfiguration(i + 1)
 			if !changedComplete && !changedPredict {
 				break
 			}
@@ -154,6 +166,19 @@ func (ga *grammarAdapter) updateCongigurations(j int, updateConfig func(configur
 			retValue = true
 		}
 	}
+	return retValue
+}
+
+func (ga *grammarAdapter) completeConfiguration(j int) bool {
+	var addedNew, retValue bool
+	length := len(ga.completeConfigurations)
+	for _, config := range ga.completeConfigurations {
+		addedNew = ga.complete(config, j, ga.word)
+		if addedNew {
+			retValue = true
+		}
+	}
+	ga.completeConfigurations = ga.completeConfigurations[length:]
 	return retValue
 }
 

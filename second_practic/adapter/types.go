@@ -18,6 +18,7 @@ type configuration struct {
 type grammarAdapter struct {
 	grammar                 *grammar.Grammar
 	currentConfigurations   []map[configuration]struct{}
+	completeConfigurations  []configuration
 	predict, complete, scan func(configuration, int, string) bool
 	word                    string
 }

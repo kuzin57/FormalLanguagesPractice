@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	grammarAdapter := adapter.BuildAdapter("../adapter/test/hard/test_grammar1.txt")
+	grammarAdapter := adapter.BuildAdapter("../adapter/test/simple/test_grammar1.txt")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		word := scanner.Text()

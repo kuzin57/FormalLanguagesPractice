@@ -21,7 +21,7 @@ func TestSimple(t *testing.T) {
 	}
 
 	for i, grammar := range testGrammars {
-		grammarAdapter := adapter.BuildAdapter(grammar)
+		grammarAdapter := adapter.BuildAdapter(grammar, "log.txt")
 		fmt.Println("adapter", grammarAdapter)
 		for _, word := range testWords[i] {
 			assert.Equal(t, true, grammarAdapter.Read(word))
@@ -83,7 +83,7 @@ func TestHard(t *testing.T) {
 	}
 
 	for i, grammar := range testGrammars {
-		grammarAdapter := adapter.BuildAdapter(grammar)
+		grammarAdapter := adapter.BuildAdapter(grammar, "log.txt")
 		for _, word := range testWordsSuccess[i] {
 			assert.True(t, grammarAdapter.Read(word))
 			grammarAdapter.Flush()

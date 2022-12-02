@@ -9,21 +9,8 @@ import (
 )
 
 func main() {
-	file, err := os.Open("../grammar.txt")
-	if err != nil {
-		panic(err)
-	}
-
-	scanner := bufio.NewScanner(file)
-	var rules []string
-	for scanner.Scan() {
-		rules = append(rules, scanner.Text())
-	}
-
-	grammarAdapter := adapter.NewGrammarAdapter()
-	grammarAdapter.BuildGrammar(rules)
-
-	scanner = bufio.NewScanner(os.Stdin)
+	grammarAdapter := adapter.BuildAdapter("../adapter/test/hard/test_grammar1.txt")
+	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		word := scanner.Text()
 		if grammarAdapter.Read(word) {

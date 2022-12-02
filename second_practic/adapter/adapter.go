@@ -1,8 +1,13 @@
 package adapter
 
-import "github.com/kuzin57/FormalPractic/second_practic/builder"
+import (
+	"bufio"
+	"os"
 
-func NewGrammarAdapter() GrammarAdapter {
+	"github.com/kuzin57/FormalPractic/second_practic/builder"
+)
+
+func newGrammarAdapter() GrammarAdapter {
 	adapter := &grammarAdapter{
 		currentConfigurations: make([]map[configuration]struct{}, 1),
 	}
@@ -10,6 +15,23 @@ func NewGrammarAdapter() GrammarAdapter {
 	adapter.initPredict()
 	adapter.initComplete()
 	return adapter
+}
+
+func BuildAdapter(filename string) GrammarAdapter {
+	file, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	scanner := bufio.NewScanner(file)
+	var rules []string
+	for scanner.Scan() {
+		rules = append(rules, scanner.Text())
+	}
+
+	grammarAdapter := newGrammarAdapter()
+	grammarAdapter.BuildGrammar(rules)
+	return grammarAdapter
 }
 
 func (ga *grammarAdapter) BuildGrammar(input []string) {

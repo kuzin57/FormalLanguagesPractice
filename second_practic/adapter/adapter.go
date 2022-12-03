@@ -73,24 +73,28 @@ func newConfigurationInfo(method string, number int) configurationInfo {
 func (ga *grammarAdapter) initScan() {
 	ga.scan = func(config configuration, indexToAdd int, word string) bool {
 		var retValue bool
-		if config.position < len(config.expression) {
-			_, ok := ga.grammar.Rules[config.expression[config.position]]
-			if !ok && word[indexToAdd] == config.expression[config.position] {
-				newConf := config
-				newConf.position++
-				_, retValue = ga.currentConfigurations[indexToAdd+1][newConf]
-				if !retValue {
-					ga.completeConfigurations = append(ga.completeConfigurations, newConf)
-					ga.configurationInfos[indexToAdd+1][newConf] = newConfigurationInfo(
-						fmt.Sprintf("scan %d", ga.configurationInfos[indexToAdd][config].number),
-						ga.currentConfNumber,
-					)
-					ga.logger.info(ga.configurationInfos[indexToAdd+1][newConf], newConf)
-					ga.currentConfNumber++
-				}
-				retValue = !retValue
-				ga.currentConfigurations[indexToAdd+1][newConf] = struct{}{}
+		if config.position >= len(config.expression) {
+			return retValue
+		}
+		_, ok := ga.grammar.Rules[config.expression[config.position]]
+		if !ok && word[indexToAdd] == config.expression[config.position] {
+			newConf := config
+			newConf.position++
+
+			_, retValue = ga.currentConfigurations[indexToAdd+1][newConf]
+			retValue = !retValue
+			if !retValue {
+				return retValue
 			}
+
+			ga.completeConfigurations = append(ga.completeConfigurations, newConf)
+			ga.configurationInfos[indexToAdd+1][newConf] = newConfigurationInfo(
+				fmt.Sprintf("scan %d", ga.configurationInfos[indexToAdd][config].number),
+				ga.currentConfNumber,
+			)
+			ga.logger.info(ga.configurationInfos[indexToAdd+1][newConf], newConf)
+			ga.currentConfNumber++
+			ga.currentConfigurations[indexToAdd+1][newConf] = struct{}{}
 		}
 		return retValue
 	}
@@ -99,25 +103,29 @@ func (ga *grammarAdapter) initScan() {
 func (ga *grammarAdapter) initPredict() {
 	ga.predict = func(config configuration, indexToAdd int, word string) bool {
 		var retValue bool
-		if config.position < len(config.expression) {
-			rules, ok := ga.grammar.Rules[config.expression[config.position]]
-			if ok {
-				for _, rule := range rules {
-					newConfig := newConfiguration(rule, 0, indexToAdd, config.expression[config.position])
-					_, retValue = ga.currentConfigurations[indexToAdd][newConfig]
-					if !retValue {
-						ga.completeConfigurations = append(ga.completeConfigurations, newConfig)
-						ga.configurationInfos[indexToAdd][newConfig] = newConfigurationInfo(
-							fmt.Sprintf("predict %d", ga.configurationInfos[indexToAdd][config].number),
-							ga.currentConfNumber,
-						)
-						ga.logger.info(ga.configurationInfos[indexToAdd][newConfig], newConfig)
-						ga.currentConfNumber++
-					}
-					retValue = !retValue
-					ga.currentConfigurations[indexToAdd][newConfig] = struct{}{}
-				}
+		if config.position >= len(config.expression) {
+			return retValue
+		}
+		rules, ok := ga.grammar.Rules[config.expression[config.position]]
+		if !ok {
+			return retValue
+		}
+		for _, rule := range rules {
+			newConfig := newConfiguration(rule, 0, indexToAdd, config.expression[config.position])
+			_, retValue = ga.currentConfigurations[indexToAdd][newConfig]
+			retValue = !retValue
+			if !retValue {
+				continue
 			}
+
+			ga.completeConfigurations = append(ga.completeConfigurations, newConfig)
+			ga.configurationInfos[indexToAdd][newConfig] = newConfigurationInfo(
+				fmt.Sprintf("predict %d", ga.configurationInfos[indexToAdd][config].number),
+				ga.currentConfNumber,
+			)
+			ga.logger.info(ga.configurationInfos[indexToAdd][newConfig], newConfig)
+			ga.currentConfNumber++
+			ga.currentConfigurations[indexToAdd][newConfig] = struct{}{}
 		}
 		return retValue
 	}
@@ -126,35 +134,40 @@ func (ga *grammarAdapter) initPredict() {
 func (ga *grammarAdapter) initComplete() {
 	ga.complete = func(config configuration, indexToAdd int, word string) bool {
 		var retValue bool
-		if config.position == len(config.expression) {
-			terminal := config.terminal
-			_, ok := ga.grammar.Rules[terminal]
-			if ok {
-				for conf := range ga.currentConfigurations[config.startIndex] {
-					if conf.position < len(conf.expression) &&
-						terminal == conf.expression[conf.position] {
-						newConf := conf
-						newConf.position++
-						_, retValue = ga.currentConfigurations[indexToAdd][newConf]
-						if !retValue {
-							ga.completeConfigurations = append(ga.completeConfigurations, newConf)
-							ga.configurationInfos[indexToAdd][newConf] = newConfigurationInfo(
-								fmt.Sprintf(
-									"complete %d, %d",
-									ga.configurationInfos[indexToAdd][config].number,
-									ga.configurationInfos[indexToAdd][conf].number,
-								),
-								ga.currentConfNumber,
-							)
-
-							ga.logger.info(ga.configurationInfos[indexToAdd][newConf], newConf)
-							ga.currentConfNumber++
-						}
-						retValue = !retValue
-						ga.currentConfigurations[indexToAdd][newConf] = struct{}{}
-					}
-				}
+		if config.position != len(config.expression) {
+			return retValue
+		}
+		terminal := config.terminal
+		_, ok := ga.grammar.Rules[terminal]
+		if !ok {
+			return retValue
+		}
+		for conf := range ga.currentConfigurations[config.startIndex] {
+			if conf.position >= len(conf.expression) || terminal != conf.expression[conf.position] {
+				continue
 			}
+			newConf := conf
+			newConf.position++
+
+			_, retValue = ga.currentConfigurations[indexToAdd][newConf]
+			retValue = !retValue
+			if !retValue {
+				continue
+			}
+
+			ga.completeConfigurations = append(ga.completeConfigurations, newConf)
+			ga.configurationInfos[indexToAdd][newConf] = newConfigurationInfo(
+				fmt.Sprintf(
+					"complete %d, %d",
+					ga.configurationInfos[indexToAdd][config].number,
+					ga.configurationInfos[indexToAdd][conf].number,
+				),
+				ga.currentConfNumber,
+			)
+
+			ga.logger.info(ga.configurationInfos[indexToAdd][newConf], newConf)
+			ga.currentConfNumber++
+			ga.currentConfigurations[indexToAdd][newConf] = struct{}{}
 		}
 		return retValue
 	}

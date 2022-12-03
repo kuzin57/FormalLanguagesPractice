@@ -192,7 +192,9 @@ func (ga *grammarAdapter) Read(word string) bool {
 	ga.logger.info(ga.configurationInfos[0][startConfiguration], startConfiguration)
 	for {
 		changedPredict := ga.updateCongigurations(0, ga.predict)
-		changedComplete := ga.completeConfiguration(0)
+		length := len(ga.completeConfigurations)
+		changedComplete := ga.updateCongigurations(0, ga.complete)
+		ga.completeConfigurations = ga.completeConfigurations[length:]
 		if !changedPredict && !changedComplete {
 			break
 		}
@@ -217,7 +219,9 @@ func (ga *grammarAdapter) Read(word string) bool {
 
 		for {
 			changedPredict := ga.updateCongigurations(i+1, ga.predict)
-			changedComplete := ga.completeConfiguration(i + 1)
+			length := len(ga.completeConfigurations)
+			changedComplete := ga.updateCongigurations(i+1, ga.complete)
+			ga.completeConfigurations = ga.completeConfigurations[length:]
 			if !changedComplete && !changedPredict {
 				break
 			}
@@ -235,19 +239,6 @@ func (ga *grammarAdapter) updateCongigurations(j int, updateConfig func(configur
 			retValue = true
 		}
 	}
-	return retValue
-}
-
-func (ga *grammarAdapter) completeConfiguration(j int) bool {
-	var addedNew, retValue bool
-	length := len(ga.completeConfigurations)
-	for _, config := range ga.completeConfigurations {
-		addedNew = ga.complete(config, j, ga.word)
-		if addedNew {
-			retValue = true
-		}
-	}
-	ga.completeConfigurations = ga.completeConfigurations[length:]
 	return retValue
 }
 

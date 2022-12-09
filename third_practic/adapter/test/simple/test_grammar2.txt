@@ -1,1 +1,1 @@
-S->SS|aSb|a|
+S->SaSb|

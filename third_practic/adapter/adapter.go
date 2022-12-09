@@ -100,22 +100,30 @@ func (ga *grammarAdapter) Flush() {
 }
 
 func (ga *grammarAdapter) initState(index int) (int, error) {
-	for curSituation := range ga.states[index].situations {
-		if curSituation.position < len(curSituation.rightPart) {
-			terminal := curSituation.rightPart[curSituation.position]
-			if !ga.isNonTerminal(terminal) {
-				continue
-			}
-			for _, right := range ga.grammar.Rules[terminal] {
-				promise := ga.getFirstAfterExpression(curSituation.rightPart, curSituation.position)
-				_, endSymbolExists := promise[endSymbol]
-				if endSymbolExists && curSituation.promise != endSymbol {
-					delete(promise, endSymbol)
-					promise[curSituation.promise] = struct{}{}
+	newAdded := true
+	for newAdded {
+		newAdded = false
+		for prevSituation := range ga.states[index].situations {
+			if prevSituation.position < len(prevSituation.rightPart) {
+				terminal := prevSituation.rightPart[prevSituation.position]
+				if !ga.isNonTerminal(terminal) {
+					continue
 				}
-				for promiseSymbol := range promise {
-					ga.states[index].situations[newSituation(
-						right, terminal, 0, promiseSymbol)] = struct{}{}
+				for _, right := range ga.grammar.Rules[terminal] {
+					promise := ga.getFirstAfterExpression(prevSituation.rightPart, prevSituation.position)
+					_, endSymbolExists := promise[endSymbol]
+					if endSymbolExists && prevSituation.promise != endSymbol {
+						delete(promise, endSymbol)
+						promise[prevSituation.promise] = struct{}{}
+					}
+					for promiseSymbol := range promise {
+						newSituation := newSituation(right, terminal, 0, promiseSymbol)
+						_, ok := ga.states[index].situations[newSituation]
+						if !ok {
+							newAdded = true
+							ga.states[index].situations[newSituation] = struct{}{}
+						}
+					}
 				}
 			}
 		}
@@ -125,7 +133,7 @@ func (ga *grammarAdapter) initState(index int) (int, error) {
 		if i == index {
 			continue
 		}
-		if checkEqualStates(state, ga.states[index]) {
+		if checkEqualStates(ga.states[index], state) {
 			return i, errStateExists
 		}
 	}

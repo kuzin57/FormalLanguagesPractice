@@ -9,8 +9,7 @@ import (
 )
 
 func main() {
-	// grammarAdapter := adapter.BuildAdapter(os.Args[1])
-	grammarAdapter, err := adapter.BuildAdapter("./grammar.txt")
+	grammarAdapter, err := adapter.BuildAdapter(os.Args[1])
 	if err != nil {
 		panic(err)
 	}

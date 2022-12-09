@@ -1,3 +1,1 @@
-S->AB|
-A->aA|a|
-B->bB|b|
+S->aaS|ba|ca|

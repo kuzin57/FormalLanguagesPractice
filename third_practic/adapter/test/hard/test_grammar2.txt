@@ -1,3 +1,2 @@
-S->SA|AB|
-A->a|
-B->BaB|Bb|bb
+S->CC|aC|
+C->cC|d

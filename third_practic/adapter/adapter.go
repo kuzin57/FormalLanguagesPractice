@@ -36,6 +36,7 @@ func BuildAdapter(filename string) (GrammarAdapter, error) {
 
 	grammarAdapter.addNewStartTerminal()
 	grammarAdapter.states[0].situations[newSituation("S", startTerminal, 0, endSymbol)] = struct{}{}
+	grammarAdapter.fillFirst()
 	grammarAdapter.initState(0)
 
 	err = grammarAdapter.buildTable()
@@ -43,7 +44,6 @@ func BuildAdapter(filename string) (GrammarAdapter, error) {
 		return nil, err
 	}
 
-	grammarAdapter.fillFirst()
 	grammarAdapter.stack = append(grammarAdapter.stack, 0)
 	return grammarAdapter, nil
 }
@@ -108,11 +108,15 @@ func (ga *grammarAdapter) initState(index int) (int, error) {
 			}
 			for _, right := range ga.grammar.Rules[terminal] {
 				promise := ga.getFirstAfterExpression(curSituation.rightPart, curSituation.position)
-				if promise == endSymbol && curSituation.promise != endSymbol {
-					promise = curSituation.promise
+				_, endSymbolExists := promise[endSymbol]
+				if endSymbolExists && curSituation.promise != endSymbol {
+					delete(promise, endSymbol)
+					promise[curSituation.promise] = struct{}{}
 				}
-				ga.states[index].situations[newSituation(
-					right, terminal, 0, promise)] = struct{}{}
+				for promiseSymbol := range promise {
+					ga.states[index].situations[newSituation(
+						right, terminal, 0, promiseSymbol)] = struct{}{}
+				}
 			}
 		}
 	}
@@ -167,16 +171,22 @@ func (ga *grammarAdapter) hasEpsilonTransition(nonTerminal byte) bool {
 	return false
 }
 
-func (ga *grammarAdapter) getFirstAfterExpression(rightPart string, position int) byte {
+func (ga *grammarAdapter) getFirstAfterExpression(rightPart string, position int) map[byte]struct{} {
+	ans := make(map[byte]struct{})
 	for i := position + 1; i < len(rightPart); i++ {
 		if !ga.isNonTerminal(rightPart[i]) {
-			return rightPart[i]
+			ans[rightPart[i]] = struct{}{}
+			return ans
 		}
-		// if ga.isNonTerminal(rightPart[i]) {
-
-		// }
+		for first := range ga.first[rightPart[i]] {
+			ans[first] = struct{}{}
+		}
+		if ga.isNonTerminal(rightPart[i]) && !ga.hasEpsilonTransition(rightPart[i]) {
+			return ans
+		}
 	}
-	return endSymbol
+	ans[endSymbol] = struct{}{}
+	return ans
 }
 
 func (ga *grammarAdapter) fillFirst() {

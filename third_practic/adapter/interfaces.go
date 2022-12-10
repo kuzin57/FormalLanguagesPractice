@@ -5,3 +5,7 @@ type GrammarAdapter interface {
 	BuildGrammar([]string)
 	Flush()
 }
+
+type AdapterInfoGetter interface {
+	GetStates() []*state
+}

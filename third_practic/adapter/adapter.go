@@ -99,43 +99,55 @@ func (ga *grammarAdapter) Flush() {
 	ga.stack = []int{0}
 }
 
-func (ga *grammarAdapter) initState(index int) (int, error) {
+func (ga *grammarAdapter) predictNewSituations(index int) {
 	newAdded := true
 	for newAdded {
 		newAdded = false
 		for prevSituation := range ga.states[index].situations {
-			if prevSituation.position < len(prevSituation.rightPart) {
-				terminal := prevSituation.rightPart[prevSituation.position]
-				if !ga.isNonTerminal(terminal) {
-					continue
+			if prevSituation.position >= len(prevSituation.rightPart) {
+				continue
+			}
+			terminal := prevSituation.rightPart[prevSituation.position]
+			if !ga.isNonTerminal(terminal) {
+				continue
+			}
+			for _, right := range ga.grammar.Rules[terminal] {
+				promise := ga.getFirstAfterExpression(prevSituation.rightPart, prevSituation.position)
+				_, endSymbolExists := promise[endSymbol]
+				if endSymbolExists && prevSituation.promise != endSymbol {
+					delete(promise, endSymbol)
+					promise[prevSituation.promise] = struct{}{}
 				}
-				for _, right := range ga.grammar.Rules[terminal] {
-					promise := ga.getFirstAfterExpression(prevSituation.rightPart, prevSituation.position)
-					_, endSymbolExists := promise[endSymbol]
-					if endSymbolExists && prevSituation.promise != endSymbol {
-						delete(promise, endSymbol)
-						promise[prevSituation.promise] = struct{}{}
+				for promiseSymbol := range promise {
+					newSituation := newSituation(right, terminal, 0, promiseSymbol)
+					_, ok := ga.states[index].situations[newSituation]
+					if ok {
+						continue
 					}
-					for promiseSymbol := range promise {
-						newSituation := newSituation(right, terminal, 0, promiseSymbol)
-						_, ok := ga.states[index].situations[newSituation]
-						if !ok {
-							newAdded = true
-							ga.states[index].situations[newSituation] = struct{}{}
-						}
-					}
+					newAdded = true
+					ga.states[index].situations[newSituation] = struct{}{}
 				}
 			}
 		}
 	}
+}
 
+func (ga *grammarAdapter) checkStateExists(index int) (int, bool) {
 	for i, state := range ga.states {
 		if i == index {
 			continue
 		}
 		if checkEqualStates(ga.states[index], state) {
-			return i, errStateExists
+			return i, true
 		}
+	}
+	return -1, false
+}
+
+func (ga *grammarAdapter) initState(index int) (int, error) {
+	ga.predictNewSituations(index)
+	if indexState, exists := ga.checkStateExists(index); exists {
+		return indexState, errStateExists
 	}
 
 	situationsInNewStates := make(map[byte][]situation)
@@ -216,13 +228,14 @@ func (ga *grammarAdapter) fillFirst() {
 				if len(rule) > 0 && rule[0] == nonTerminal {
 					continue
 				}
-				if len(rule) > 0 && ga.isNonTerminal(rule[0]) {
-					for terminal := range ga.first[rule[0]] {
-						_, ok := ga.first[nonTerminal][terminal]
-						if !ok {
-							somethingChanged = true
-							ga.first[nonTerminal][terminal] = struct{}{}
-						}
+				if len(rule) == 0 || !ga.isNonTerminal(rule[0]) {
+					continue
+				}
+				for terminal := range ga.first[rule[0]] {
+					_, ok := ga.first[nonTerminal][terminal]
+					if !ok {
+						somethingChanged = true
+						ga.first[nonTerminal][terminal] = struct{}{}
 					}
 				}
 			}
@@ -243,6 +256,21 @@ func checkEqualStates(first, second *state) bool {
 		}
 	}
 	return true
+}
+
+func (ga *grammarAdapter) checkValidReduce(situation situation, lineActions map[byte]action, ruleNumber int) bool {
+	return ((lineActions[situation.promise].operationType == reduce &&
+		lineActions[situation.promise].rule == ruleNumber &&
+		lineActions[situation.promise].nonTerminal == situation.nonTerminal) ||
+		(lineActions[situation.promise].operationType == reject &&
+			lineActions[situation.promise].rule == -1))
+}
+
+func (ga *grammarAdapter) checkValidShift(situation situation, lineActions map[byte]action) bool {
+	shiftSymbol := situation.rightPart[situation.position]
+	return ((lineActions[shiftSymbol].operationType == shift) ||
+		(lineActions[shiftSymbol].operationType == reject &&
+			lineActions[shiftSymbol].rule == -1))
 }
 
 func (ga *grammarAdapter) buildTable() error {
@@ -271,11 +299,7 @@ func (ga *grammarAdapter) buildTable() error {
 					nonTerminal:   situation.nonTerminal,
 				}
 			case situation.position == len(situation.rightPart):
-				if !((newTableLine[situation.promise].operationType == reduce &&
-					newTableLine[situation.promise].rule == ruleNumber &&
-					newTableLine[situation.promise].nonTerminal == situation.nonTerminal) ||
-					(newTableLine[situation.promise].operationType == reject &&
-						newTableLine[situation.promise].rule == -1)) {
+				if !ga.checkValidReduce(situation, newTableLine, ruleNumber) {
 					return errNotLR1
 				}
 
@@ -285,10 +309,7 @@ func (ga *grammarAdapter) buildTable() error {
 					nonTerminal:   situation.nonTerminal,
 				}
 			case !ga.isNonTerminal(situation.rightPart[situation.position]):
-				shiftSymbol := situation.rightPart[situation.position]
-				if !((newTableLine[shiftSymbol].operationType == shift) ||
-					(newTableLine[shiftSymbol].operationType == reject &&
-						newTableLine[shiftSymbol].rule == -1)) {
+				if !ga.checkValidShift(situation, newTableLine) {
 					return errNotLR1
 				}
 
@@ -312,4 +333,14 @@ func (ga *grammarAdapter) findRuleBySituation(situation situation) (int, error) 
 		}
 	}
 	return -1, errNoSuchRule
+}
+
+func newInfoGetter(adapter GrammarAdapter) *infoGetter {
+	return &infoGetter{
+		adapter: adapter.(*grammarAdapter),
+	}
+}
+
+func (g *infoGetter) getStates() []*state {
+	return g.adapter.states
 }

@@ -52,3 +52,7 @@ type situation struct {
 	nonTerminal byte
 	promise     byte
 }
+
+type infoGetter struct {
+	adapter *grammarAdapter
+}

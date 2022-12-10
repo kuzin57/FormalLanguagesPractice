@@ -1,14 +1,13 @@
-package adapter_test
+package adapter
 
 import (
 	"testing"
 
-	"github.com/kuzin57/FormalPractic/third_practic/adapter"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSimpleFirst(t *testing.T) {
-	grammarAdapter, err := adapter.BuildAdapter("./test/simple/test_grammar1.txt")
+	grammarAdapter, err := BuildAdapter("./test/simple/test_grammar1.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +47,7 @@ func TestSimpleFirst(t *testing.T) {
 }
 
 func TestSimpleSecond(t *testing.T) {
-	grammarAdapter, err := adapter.BuildAdapter("./test/simple/test_grammar2.txt")
+	grammarAdapter, err := BuildAdapter("./test/simple/test_grammar2.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +86,7 @@ func TestSimpleSecond(t *testing.T) {
 }
 
 func TestSimpleThird(t *testing.T) {
-	grammarAdapter, err := adapter.BuildAdapter("./test/simple/test_grammar3.txt")
+	grammarAdapter, err := BuildAdapter("./test/simple/test_grammar3.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +127,7 @@ func TestSimpleThird(t *testing.T) {
 }
 
 func TestHardFirst(t *testing.T) {
-	grammarAdapter, err := adapter.BuildAdapter("./test/hard/test_grammar1.txt")
+	grammarAdapter, err := BuildAdapter("./test/hard/test_grammar1.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -177,7 +176,7 @@ func TestHardFirst(t *testing.T) {
 }
 
 func TestHardSecond(t *testing.T) {
-	grammarAdapter, err := adapter.BuildAdapter("./test/hard/test_grammar2.txt")
+	grammarAdapter, err := BuildAdapter("./test/hard/test_grammar2.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -226,7 +225,7 @@ func TestHardSecond(t *testing.T) {
 }
 
 func TestHardThird(t *testing.T) {
-	grammarAdapter, err := adapter.BuildAdapter("./test/hard/test_grammar3.txt")
+	grammarAdapter, err := BuildAdapter("./test/hard/test_grammar3.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -270,4 +269,89 @@ func TestHardThird(t *testing.T) {
 		assert.False(t, grammarAdapter.Read(testCase))
 		grammarAdapter.Flush()
 	}
+}
+
+func TestStatesInfoFirst(t *testing.T) {
+	grammarAdapter, err := BuildAdapter("./test/simple/test_grammar1.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	infoGetter := newInfoGetter(grammarAdapter)
+	states := infoGetter.getStates()
+	assert.Equal(t, 10, len(states))
+
+	assert.Equal(t, 3, len(states[0].situations))
+	_, ok := states[0].transitions['a']
+	assert.True(t, ok)
+	_, ok = states[0].transitions['S']
+	assert.True(t, ok)
+
+	statesNum := states[0].transitions['S']
+	assert.Equal(t, 1, len(states[statesNum].situations))
+	assert.Equal(t, 0, len(states[statesNum].transitions))
+
+	statesNum = states[0].transitions['a']
+	assert.Equal(t, 3, len(states[statesNum].situations))
+	_, ok = states[statesNum].transitions['a']
+	assert.True(t, ok)
+	_, ok = states[statesNum].transitions['S']
+	assert.True(t, ok)
+}
+
+func TestStatesInfoSecond(t *testing.T) {
+	grammarAdapter, err := BuildAdapter("./test/simple/test_grammar2.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	infoGetter := newInfoGetter(grammarAdapter)
+	states := infoGetter.getStates()
+	assert.Equal(t, 8, len(states))
+
+	assert.Equal(t, 1, len(states[0].transitions))
+	assert.Equal(t, 5, len(states[0].situations))
+	_, ok := states[0].transitions['S']
+	assert.True(t, ok)
+
+	statesNum := states[0].transitions['S']
+	assert.Equal(t, 3, len(states[statesNum].situations))
+	assert.Equal(t, 1, len(states[statesNum].transitions))
+
+	_, ok = states[statesNum].transitions['a']
+	assert.True(t, ok)
+	statesNum = states[statesNum].transitions['a']
+	assert.Equal(t, 6, len(states[statesNum].situations))
+	assert.Equal(t, 1, len(states[statesNum].transitions))
+
+	_, ok = states[statesNum].transitions['S']
+	assert.True(t, ok)
+	statesNum = states[statesNum].transitions['S']
+	assert.Equal(t, 4, len(states[statesNum].situations))
+	assert.Equal(t, 2, len(states[statesNum].transitions))
+
+	_, ok = states[statesNum].transitions['a']
+	assert.True(t, ok)
+	_, ok = states[statesNum].transitions['b']
+	assert.True(t, ok)
+
+	statesNum = states[statesNum].transitions['a']
+	assert.Equal(t, 6, len(states[statesNum].situations))
+	assert.Equal(t, 1, len(states[statesNum].transitions))
+
+	_, ok = states[statesNum].transitions['S']
+	assert.True(t, ok)
+
+	statesNum = states[statesNum].transitions['S']
+	assert.Equal(t, 4, len(states[statesNum].situations))
+	assert.Equal(t, 2, len(states[statesNum].transitions))
+
+	_, ok = states[statesNum].transitions['a']
+	assert.True(t, ok)
+	_, ok = states[statesNum].transitions['b']
+	assert.True(t, ok)
+
+	statesNum = states[statesNum].transitions['b']
+	assert.Equal(t, 2, len(states[statesNum].situations))
+	assert.Equal(t, 0, len(states[statesNum].transitions))
 }

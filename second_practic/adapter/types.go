@@ -36,3 +36,7 @@ type configurationInfo struct {
 	method string
 	number int
 }
+
+type configGetter struct {
+	adapter *grammarAdapter
+}

@@ -1,0 +1,36 @@
+D0:
+0) ($ -> .S, 0) init
+1) (S -> .SaSb, 0) predict 0
+2) (S -> ., 0) predict 0
+3) ($ -> S., 0) complete 2, 0
+4) (S -> S.aSb, 0) complete 2, 1
+D1:
+5) (S -> Sa.Sb, 0) scan 4
+6) (S -> .SaSb, 1) predict 5
+7) (S -> ., 1) predict 5
+8) (S -> SaS.b, 0) complete 7, 5
+9) (S -> S.aSb, 1) complete 7, 6
+D2:
+10) (S -> Sa.Sb, 1) scan 9
+11) (S -> .SaSb, 2) predict 10
+12) (S -> ., 2) predict 10
+13) (S -> S.aSb, 2) complete 12, 11
+14) (S -> SaS.b, 1) complete 12, 10
+D3:
+15) (S -> SaSb., 1) scan 14
+16) (S -> SaS.b, 0) complete 15, 0
+17) (S -> S.aSb, 1) complete 15, 0
+D4:
+18) (S -> SaSb., 0) scan 16
+19) ($ -> S., 0) complete 18, 0
+20) (S -> S.aSb, 0) complete 18, 0
+D5:
+21) (S -> Sa.Sb, 0) scan 20
+22) (S -> .SaSb, 5) predict 21
+23) (S -> ., 5) predict 21
+24) (S -> SaS.b, 0) complete 23, 21
+25) (S -> S.aSb, 5) complete 23, 22
+D6:
+26) (S -> SaSb., 0) scan 24
+27) ($ -> S., 0) complete 26, 0
+28) (S -> S.aSb, 0) complete 26, 0

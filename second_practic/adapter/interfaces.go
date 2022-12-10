@@ -5,3 +5,8 @@ type GrammarAdapter interface {
 	BuildGrammar([]string)
 	Flush()
 }
+
+type configurationsGetter interface {
+	GetConfigurations() []map[configuration]struct{}
+	GetConfigurationsInfos() []map[configuration]configurationInfo
+}

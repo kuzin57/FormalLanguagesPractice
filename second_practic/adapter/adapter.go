@@ -245,3 +245,18 @@ func (ga *grammarAdapter) updateCongigurations(j int, updateConfig func(configur
 func (ga *grammarAdapter) addNewStartSymbol() {
 	ga.grammar.Rules[startSymbol] = []string{"S"}
 }
+
+func newConfigurationGetter(adapter GrammarAdapter) configurationsGetter {
+	grammarAdapter := adapter.(*grammarAdapter)
+	return &configGetter{
+		adapter: grammarAdapter,
+	}
+}
+
+func (cg *configGetter) GetConfigurations() []map[configuration]struct{} {
+	return cg.adapter.currentConfigurations
+}
+
+func (cg *configGetter) GetConfigurationsInfos() []map[configuration]configurationInfo {
+	return cg.adapter.configurationInfos
+}

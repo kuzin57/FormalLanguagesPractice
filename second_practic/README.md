@@ -1,0 +1,1 @@
+- to run application go to main, then launch go build && ./main arg1 arg2, where arg1 is a path to the file with grammar description, arg2 is a path to file for logging
